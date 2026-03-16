@@ -12,14 +12,15 @@ class ToDoRepository:
 
     def list_all(
         self,
+        owner_id: int,
         is_done: Optional[bool] = None,
         search: Optional[str] = None,
         sort: Literal["created_at", "-created_at"] = "created_at",
         limit: int = 10,
         offset: int = 0,
     ) -> tuple[list[ToDo], int]:
-        """List todos with filtering, searching, sorting, and pagination"""
-        query = select(ToDo)
+        """List todos for owner with filtering, searching, sorting, and pagination"""
+        query = select(ToDo).where(ToDo.owner_id == owner_id)
 
         if is_done is not None:
             query = query.where(ToDo.is_done == is_done)
@@ -38,9 +39,11 @@ class ToDoRepository:
         items = self._db.exec(query.offset(offset).limit(limit)).all()
         return items, total
 
-    def get_by_id(self, todo_id: int) -> Optional[ToDo]:
-        """Get todo by id"""
-        query = select(ToDo).where(ToDo.id == todo_id)
+    def get_by_id(self, todo_id: int, owner_id: int) -> Optional[ToDo]:
+        """Get todo by id, verify owner"""
+        query = select(ToDo).where(
+            (ToDo.id == todo_id) & (ToDo.owner_id == owner_id)
+        )
         return self._db.exec(query).first()
 
     def create(self, todo: ToDo) -> ToDo:
@@ -58,9 +61,9 @@ class ToDoRepository:
         self._db.refresh(todo)
         return todo
 
-    def delete(self, todo_id: int) -> Optional[ToDo]:
-        """Delete todo by id"""
-        todo = self.get_by_id(todo_id)
+    def delete(self, todo_id: int, owner_id: int) -> Optional[ToDo]:
+        """Delete todo by id, verify owner"""
+        todo = self.get_by_id(todo_id, owner_id)
         if todo:
             self._db.delete(todo)
             self._db.commit()

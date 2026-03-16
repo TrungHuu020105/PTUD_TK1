@@ -2,6 +2,8 @@ from fastapi import FastAPI
 
 from core.config import settings
 from core.database import create_db_and_tables
+from models.todo import ToDo  # noqa: F401 - ensures model is registered
+from models.user import User  # noqa: F401 - ensures model is registered
 from routers import api_router
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)

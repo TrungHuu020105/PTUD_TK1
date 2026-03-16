@@ -20,6 +20,7 @@ class ToDoBase(BaseModel):
 
 class ToDo(ToDoBase):
     id: int
+    owner_id: int
     created_at: datetime
     updated_at: datetime
 

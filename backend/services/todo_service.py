@@ -15,6 +15,7 @@ class ToDoService:
 
     def list_todos(
         self,
+        owner_id: int,
         is_done: Optional[bool],
         q: Optional[str],
         sort: Literal["created_at", "-created_at"],
@@ -22,6 +23,7 @@ class ToDoService:
         offset: int,
     ) -> ToDoListResponse:
         items, total = self._repository.list_all(
+            owner_id=owner_id,
             is_done=is_done,
             search=q,
             sort=sort,
@@ -31,19 +33,24 @@ class ToDoService:
         items_dto = [ToDoSchema.model_validate(item) for item in items]
         return ToDoListResponse(items=items_dto, total=total, limit=limit, offset=offset)
 
-    def create_todo(self, payload: ToDoCreate) -> ToDoSchema:
-        todo = ToDo(title=payload.title, description=payload.description, is_done=payload.is_done)
+    def create_todo(self, owner_id: int, payload: ToDoCreate) -> ToDoSchema:
+        todo = ToDo(
+            owner_id=owner_id,
+            title=payload.title,
+            description=payload.description,
+            is_done=payload.is_done,
+        )
         saved_todo = self._repository.create(todo)
         return ToDoSchema.model_validate(saved_todo)
 
-    def get_todo(self, todo_id: int) -> ToDoSchema:
-        todo = self._repository.get_by_id(todo_id)
+    def get_todo(self, todo_id: int, owner_id: int) -> ToDoSchema:
+        todo = self._repository.get_by_id(todo_id, owner_id)
         if todo is None:
             raise HTTPException(status_code=404, detail="ToDo not found")
         return ToDoSchema.model_validate(todo)
 
-    def update_todo(self, todo_id: int, payload: ToDoUpdate) -> ToDoSchema:
-        todo = self._repository.get_by_id(todo_id)
+    def update_todo(self, todo_id: int, owner_id: int, payload: ToDoUpdate) -> ToDoSchema:
+        todo = self._repository.get_by_id(todo_id, owner_id)
         if todo is None:
             raise HTTPException(status_code=404, detail="ToDo not found")
 
@@ -53,9 +60,9 @@ class ToDoService:
         updated_todo = self._repository.update(todo)
         return ToDoSchema.model_validate(updated_todo)
 
-    def patch_todo(self, todo_id: int, payload: ToDoPatch) -> ToDoSchema:
+    def patch_todo(self, todo_id: int, owner_id: int, payload: ToDoPatch) -> ToDoSchema:
         """Partial update - only update provided fields"""
-        todo = self._repository.get_by_id(todo_id)
+        todo = self._repository.get_by_id(todo_id, owner_id)
         if todo is None:
             raise HTTPException(status_code=404, detail="ToDo not found")
 
@@ -69,9 +76,9 @@ class ToDoService:
         updated_todo = self._repository.update(todo)
         return ToDoSchema.model_validate(updated_todo)
 
-    def complete_todo(self, todo_id: int) -> ToDoSchema:
+    def complete_todo(self, todo_id: int, owner_id: int) -> ToDoSchema:
         """Mark todo as completed"""
-        todo = self._repository.get_by_id(todo_id)
+        todo = self._repository.get_by_id(todo_id, owner_id)
         if todo is None:
             raise HTTPException(status_code=404, detail="ToDo not found")
 
@@ -79,16 +86,14 @@ class ToDoService:
         updated_todo = self._repository.update(todo)
         return ToDoSchema.model_validate(updated_todo)
 
-    def delete_todo(self, todo_id: int) -> ToDoSchema:
-        todo = self._repository.get_by_id(todo_id)
+    def delete_todo(self, todo_id: int, owner_id: int) -> ToDoSchema:
+        todo = self._repository.get_by_id(todo_id, owner_id)
         if todo is None:
             raise HTTPException(status_code=404, detail="ToDo not found")
-
-        deleted_todo = self._repository.delete(todo_id)
+        deleted_todo = self._repository.delete(todo_id, owner_id)
         return ToDoSchema.model_validate(deleted_todo)
 
 
 def get_service(db: Session) -> ToDoService:
     repository = ToDoRepository(db)
     return ToDoService(repository)
-
