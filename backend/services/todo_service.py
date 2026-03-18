@@ -33,12 +33,47 @@ class ToDoService:
         items_dto = [ToDoSchema.model_validate(item) for item in items]
         return ToDoListResponse(items=items_dto, total=total, limit=limit, offset=offset)
 
+    def list_overdue_todos(
+        self,
+        owner_id: int,
+        q: Optional[str] = None,
+        limit: int = 10,
+        offset: int = 0,
+    ) -> ToDoListResponse:
+        """List overdue todos"""
+        items, total = self._repository.list_overdue(
+            owner_id=owner_id,
+            search=q,
+            limit=limit,
+            offset=offset,
+        )
+        items_dto = [ToDoSchema.model_validate(item) for item in items]
+        return ToDoListResponse(items=items_dto, total=total, limit=limit, offset=offset)
+
+    def list_today_todos(
+        self,
+        owner_id: int,
+        q: Optional[str] = None,
+        limit: int = 10,
+        offset: int = 0,
+    ) -> ToDoListResponse:
+        """List todos due today"""
+        items, total = self._repository.list_today(
+            owner_id=owner_id,
+            search=q,
+            limit=limit,
+            offset=offset,
+        )
+        items_dto = [ToDoSchema.model_validate(item) for item in items]
+        return ToDoListResponse(items=items_dto, total=total, limit=limit, offset=offset)
+
     def create_todo(self, owner_id: int, payload: ToDoCreate) -> ToDoSchema:
         todo = ToDo(
             owner_id=owner_id,
             title=payload.title,
             description=payload.description,
             is_done=payload.is_done,
+            due_date=payload.due_date,
         )
         saved_todo = self._repository.create(todo)
         return ToDoSchema.model_validate(saved_todo)
@@ -57,6 +92,7 @@ class ToDoService:
         todo.title = payload.title
         todo.description = payload.description
         todo.is_done = payload.is_done
+        todo.due_date = payload.due_date
         updated_todo = self._repository.update(todo)
         return ToDoSchema.model_validate(updated_todo)
 
@@ -72,6 +108,8 @@ class ToDoService:
             todo.description = payload.description
         if payload.is_done is not None:
             todo.is_done = payload.is_done
+        if payload.due_date is not None:
+            todo.due_date = payload.due_date
 
         updated_todo = self._repository.update(todo)
         return ToDoSchema.model_validate(updated_todo)

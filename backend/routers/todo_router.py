@@ -71,6 +71,44 @@ def list_todos(
     )
 
 
+@router.get("/overdue", response_model=ToDoListResponse)
+def list_overdue_todos(
+    q: Optional[str] = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    authorization: str = Header(None),
+    db: Session = Depends(get_session),
+):
+    """Get all overdue todos (due_date < now, is_done=false)"""
+    user_id = get_current_user_id(authorization)
+    service = get_service(db)
+    return service.list_overdue_todos(
+        owner_id=user_id,
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/today", response_model=ToDoListResponse)
+def list_today_todos(
+    q: Optional[str] = Query(default=None),
+    limit: int = Query(default=10, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    authorization: str = Header(None),
+    db: Session = Depends(get_session),
+):
+    """Get all todos due today (is_done=false)"""
+    user_id = get_current_user_id(authorization)
+    service = get_service(db)
+    return service.list_today_todos(
+        owner_id=user_id,
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+
 @router.post("", response_model=ToDo)
 def create_todo(
     payload: ToDoCreate,

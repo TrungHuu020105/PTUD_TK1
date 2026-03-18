@@ -1,13 +1,25 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class TagSchema(BaseModel):
+    """Tag response schema"""
+    id: int
+    name: str
+    owner_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ToDoBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
     is_done: bool = False
+    due_date: Optional[datetime] = None
 
     @field_validator("title")
     @classmethod
@@ -23,12 +35,18 @@ class ToDo(ToDoBase):
     owner_id: int
     created_at: datetime
     updated_at: datetime
+    tags: List[TagSchema] = []
+
+    class Config:
+        from_attributes = True
 
 
 class ToDoCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
     is_done: bool = False
+    due_date: Optional[datetime] = None
+    tag_ids: Optional[List[int]] = None
 
     @field_validator("title")
     @classmethod
@@ -43,6 +61,8 @@ class ToDoUpdate(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
     is_done: bool
+    due_date: Optional[datetime] = None
+    tag_ids: Optional[List[int]] = None
 
     @field_validator("title")
     @classmethod
@@ -58,6 +78,8 @@ class ToDoPatch(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=100)
     description: Optional[str] = None
     is_done: Optional[bool] = None
+    due_date: Optional[datetime] = None
+    tag_ids: Optional[List[int]] = None
 
     @field_validator("title")
     @classmethod
