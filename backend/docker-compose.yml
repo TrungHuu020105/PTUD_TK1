@@ -1,0 +1,107 @@
+version: '3.9'
+
+services:
+  # === Option 1: SQLite (Simple - no extra services) ===
+  # Just run: docker-compose up app-sqlite
+
+  # === Option 2: PostgreSQL (Production - with DB service) ===
+  # Just run: docker-compose up (or docker-compose up -d)
+
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: todolist-postgres
+    environment:
+      POSTGRES_DB: todolist_db
+      POSTGRES_USER: todolist_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todolist_password_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todolist_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - todolist_network
+
+  # FastAPI Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todolist-api
+    environment:
+      # Database Configuration
+      DATABASE_URL: postgresql://${POSTGRES_USER:-todolist_user}:${POSTGRES_PASSWORD:-todolist_password_123}@postgres:5432/todolist_db
+      
+      # FastAPI Settings
+      APP_NAME: To-Do List API
+      DEBUG: "False"
+      API_V1_PREFIX: /api/v1
+      
+      # JWT Settings
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - todolist_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: todolist-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - todolist_network
+    profiles:
+      - debug  # Only run with: docker-compose --profile debug up
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  todolist_network:
+    driver: bridge
+
+# === HOW TO USE ===
+# 
+# 1. SQLite (Quick development - no database service):
+#    $ docker build -t todolist-api .
+#    $ docker run -p 8000:8000 -e DATABASE_URL=sqlite:///./test.db todolist-api
+#
+# 2. PostgreSQL (Full setup - recommended):
+#    $ cp .env.example .env
+#    $ docker-compose up -d
+#    # API will be at http://localhost:8000/api/v1
+#    # PostgreSQL at localhost:5432
+#
+# 3. PostgreSQL with pgAdmin (for debugging):
+#    $ docker-compose --profile debug up -d
+#    # pgAdmin: http://localhost:5050 (admin/admin)
+#
+# Stop and cleanup:
+#    $ docker-compose down -v  # -v removes volumes (database)
+#

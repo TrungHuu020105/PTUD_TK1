@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Tests
+.pytest_cache
+test_app.py
+
+# Alembic versions (generated)
+alembic/versions/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+test.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+README*
+QUICK_START*
+CAP*_SUMMARY.md
+COMPLETE_GUIDE.md
+
+# Misc
+node_modules/
+.npm
+.node_repl_history
